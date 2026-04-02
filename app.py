@@ -10,28 +10,24 @@ app = Flask(__name__)
 
 api_key = os.getenv("GEMINI_API_KEY")
 if not api_key:
-    raise ValueError("GEMINI_API_KEY is missing in environment variables.")
+    raise ValueError("GEMINI_API_KEY is missing. Add it to your .env file.")
 
 client = genai.Client(api_key=api_key)
 
 MODEL_NAME = "gemini-2.5-flash"
 
 SYSTEM_INSTRUCTION = """
-You are a factual assistant for a web chatbot.
+You are an intelligent conversational AI assistant.
 
 Rules:
-1. For current or time-sensitive facts (politics, news, sports, prices, weather, public figures, office holders, dates, schedules, rankings, laws, product specs, or anything that may have changed), use grounded web information.
-2. Do not present uncertain current facts as certain.
-3. If grounded sources are available, base the answer on them.
-4. If grounded sources are not available for a time-sensitive question, say you are not fully sure instead of guessing.
-5. Keep responses clear and concise.
+1. Answer clearly and naturally.
+2. Be concise unless the user asks for more detail.
+3. For current or time-sensitive topics, use grounded web search.
+4. If a fact may be uncertain, say so instead of guessing.
+5. Be helpful, polite, and accurate.
 """
 
 def extract_sources(response):
-    """
-    Extract grounded web sources from Gemini grounding metadata.
-    Returns a de-duplicated list of {title, url}.
-    """
     sources = []
     seen = set()
 
@@ -58,15 +54,15 @@ def extract_sources(response):
                         "url": url
                     })
     except Exception:
-        # If metadata structure changes or is unavailable,
-        # fail safely and just return no sources.
         pass
 
     return sources
 
+
 @app.route("/")
 def home():
     return render_template("index.html")
+
 
 @app.route("/chat", methods=["POST"])
 def chat():
@@ -74,7 +70,10 @@ def chat():
     user_message = (data.get("message") or "").strip()
 
     if not user_message:
-        return jsonify({"response": "Please type a question.", "sources": []}), 400
+        return jsonify({
+            "response": "Please type a message.",
+            "sources": []
+        }), 400
 
     try:
         grounding_tool = types.Tool(
@@ -84,7 +83,7 @@ def chat():
         config = types.GenerateContentConfig(
             system_instruction=SYSTEM_INSTRUCTION,
             tools=[grounding_tool],
-            temperature=0.2,
+            temperature=0.4,
             max_output_tokens=500,
         )
 
@@ -107,6 +106,7 @@ def chat():
             "response": f"Error: {str(e)}",
             "sources": []
         }), 500
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)), debug=False)
