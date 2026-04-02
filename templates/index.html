@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Chatbot AI</title>
+  <title>AI Chatbot</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -16,7 +16,7 @@
     }
 
     .chat-container {
-      width: 480px;
+      width: 500px;
       background: white;
       border-radius: 14px;
       box-shadow: 0 6px 20px rgba(0,0,0,0.12);
@@ -60,6 +60,27 @@
       text-align: left;
     }
 
+    .sources {
+      margin-top: 10px;
+      font-size: 13px;
+    }
+
+    .sources-title {
+      font-weight: bold;
+      margin-bottom: 4px;
+    }
+
+    .sources a {
+      display: block;
+      color: #1d4ed8;
+      text-decoration: none;
+      margin-top: 4px;
+    }
+
+    .sources a:hover {
+      text-decoration: underline;
+    }
+
     .input-area {
       display: flex;
       gap: 8px;
@@ -86,14 +107,20 @@
       cursor: pointer;
       font-size: 15px;
     }
+
+    .input-area button:hover {
+      background: #1d4ed8;
+    }
   </style>
 </head>
 <body>
   <div class="chat-container">
-    <div class="chat-header">Chatbot AI</div>
+    <div class="chat-header">AI Chatbot</div>
+
     <div class="chat-box" id="chat-box">
-      <div class="message bot">Hi! I am Chatbot AI. Ask me anything.</div>
+      <div class="message bot">Hi! I am an intelligent conversational AI chatbot. Ask me anything.</div>
     </div>
+
     <div class="input-area">
       <input type="text" id="user-input" placeholder="Ask a question..." />
       <button onclick="sendMessage()">Send</button>
@@ -123,21 +150,46 @@
       try {
         const res = await fetch("/chat", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json"
+          },
           body: JSON.stringify({ message: text })
         });
 
         const data = await res.json();
         botDiv.textContent = data.response || "No response received.";
+
+        if (data.sources && data.sources.length > 0) {
+          const srcDiv = document.createElement("div");
+          srcDiv.className = "sources";
+
+          const titleDiv = document.createElement("div");
+          titleDiv.className = "sources-title";
+          titleDiv.textContent = "Sources:";
+          srcDiv.appendChild(titleDiv);
+
+          data.sources.forEach(src => {
+            const link = document.createElement("a");
+            link.href = src.url;
+            link.target = "_blank";
+            link.rel = "noopener noreferrer";
+            link.textContent = src.title || src.url;
+            srcDiv.appendChild(link);
+          });
+
+          botDiv.appendChild(srcDiv);
+        }
       } catch (error) {
-        botDiv.textContent = "Something went wrong.";
+        botDiv.textContent = "Something went wrong while getting the answer.";
       }
 
       chatBox.scrollTop = chatBox.scrollHeight;
     }
 
     document.getElementById("user-input").addEventListener("keypress", function(e) {
-      if (e.key === "Enter") sendMessage();
+      if (e.key === "Enter") {
+        sendMessage();
+      }
     });
   </script>
 </body>
